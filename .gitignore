@@ -1,0 +1,10 @@
+.git/
+.env
+.env.*
+*.log
+*.exe
+*.tsbuildinfo
+.loan-gocache/
+frontend/node_modules/
+frontend/.next/
+**/.git/
