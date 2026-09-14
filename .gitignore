@@ -1,10 +1,23 @@
-.git/
+# Node dependencies (if using JavaScript/React/Node)
+node_modules/
+.next/
+dist/
+
+# Go build and compiler cache
+.gocache/
+**/.gocache/
+**/.loan-gocache/
+*.exe
+
+# Local environment files and secrets
 .env
 .env.*
-*.log
-*.exe
-*.tsbuildinfo
-.loan-gocache/
-frontend/node_modules/
-frontend/.next/
-**/.git/
+!.env.example
+
+# Python environments (if using Python)
+venv/
+.venv/
+__pycache__/
+
+# Windows system files
+Thumbs.db

@@ -1,0 +1,432 @@
+openapi: 3.0.0
+info:
+  title: Loan API Service
+  description: REST API for managing loan applications in a banking system
+  version: 1.0.0
+  contact:
+    name: Development Team
+    email: dev@bank.com
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local Development Server
+  - url: https://api.staging.bank.com
+    description: Staging Server
+  - url: https://api.bank.com
+    description: Production Server
+
+tags:
+  - name: Loans
+    description: Loan management operations
+  - name: Health
+    description: Service health checks
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Check service health
+      description: Returns the health status of the API service
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+
+  /api/loans:
+    get:
+      tags:
+        - Loans
+      summary: Get all loans
+      description: Retrieves a list of all loan applications
+      responses:
+        '200':
+          description: List of loans retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanListResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Loans
+      summary: Create a new loan
+      description: Submits a new loan application for processing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLoanRequest'
+            examples:
+              Standard Loan:
+                value:
+                  applicant_name: John Doe
+                  email: john@example.com
+                  amount: 50000
+                  term_months: 36
+      responses:
+        '201':
+          description: Loan created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanResponse'
+        '400':
+          description: Bad request - validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/loans/{id}:
+    get:
+      tags:
+        - Loans
+      summary: Get loan by ID
+      description: Retrieves a specific loan application by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Loan ID
+          schema:
+            type: string
+            example: "1"
+      responses:
+        '200':
+          description: Loan retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanResponse'
+        '404':
+          description: Loan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+
+    put:
+      tags:
+        - Loans
+      summary: Update loan details
+      description: Updates editable loan application fields and recalculates payment values
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Loan ID
+          schema:
+            type: string
+            example: "1"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLoanRequest'
+            examples:
+              Update Loan:
+                value:
+                  applicant_name: Jane Doe
+                  email: jane@example.com
+                  amount: 75000
+                  term_months: 48
+      responses:
+        '200':
+          description: Loan updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanResponse'
+        '400':
+          description: Bad request - validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Loan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+
+    delete:
+      tags:
+        - Loans
+      summary: Delete a loan
+      description: Permanently deletes a loan application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Loan ID
+          schema:
+            type: string
+            example: "1"
+      responses:
+        '200':
+          description: Loan deleted successfully
+        '404':
+          description: Loan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+
+  /api/loans/{id}/status:
+    put:
+      tags:
+        - Loans
+      summary: Update loan status
+      description: Approves or rejects a loan application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Loan ID
+          schema:
+            type: string
+            example: "1"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  description: New status of the loan
+                  enum:
+                    - approve
+                    - reject
+                  example: approve
+            examples:
+              Approve:
+                value:
+                  status: approve
+              Reject:
+                value:
+                  status: reject
+      responses:
+        '200':
+          description: Status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanResponse'
+        '400':
+          description: Invalid status or loan not pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Loan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    Loan:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique loan identifier
+          example: "1"
+        applicant_name:
+          type: string
+          description: Full name of the applicant
+          example: John Doe
+        email:
+          type: string
+          format: email
+          description: Applicant's email address
+          example: john@example.com
+        amount:
+          type: number
+          format: float
+          description: Loan amount in local currency
+          example: 50000
+        term_months:
+          type: integer
+          description: Loan repayment term in months
+          example: 36
+        interest_rate:
+          type: number
+          format: float
+          description: Interest rate percentage
+          example: 7.5
+        monthly_payment:
+          type: number
+          format: float
+          description: Monthly installment amount
+          example: 1550.25
+        total_payment:
+          type: number
+          format: float
+          description: Total amount to be repaid
+          example: 55809.00
+        status:
+          type: string
+          description: Current loan status
+          enum:
+            - pending
+            - approved
+            - rejected
+            - active
+            - completed
+            - defaulted
+          example: pending
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+          example: "2026-08-19T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2026-08-19T10:30:00Z"
+
+    CreateLoanRequest:
+      type: object
+      required:
+        - applicant_name
+        - email
+        - amount
+        - term_months
+      properties:
+        applicant_name:
+          type: string
+          description: Full name of the applicant
+          minLength: 2
+          maxLength: 100
+          example: John Doe
+        email:
+          type: string
+          format: email
+          description: Applicant's email address
+          example: john@example.com
+        amount:
+          type: number
+          format: float
+          description: Loan amount
+          minimum: 1000
+          maximum: 1000000
+          example: 50000
+        term_months:
+          type: integer
+          description: Repayment term in months
+          minimum: 3
+          maximum: 84
+          example: 36
+
+    UpdateLoanRequest:
+      type: object
+      required:
+        - applicant_name
+        - email
+        - amount
+        - term_months
+      properties:
+        applicant_name:
+          type: string
+          description: Full name of the applicant
+          minLength: 2
+          maxLength: 100
+          example: Jane Doe
+        email:
+          type: string
+          format: email
+          description: Applicant's email address
+          example: jane@example.com
+        amount:
+          type: number
+          format: float
+          description: Loan amount
+          minimum: 1
+          example: 75000
+        term_months:
+          type: integer
+          description: Repayment term in months
+          minimum: 1
+          example: 48
+
+    LoanResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Loan retrieved successfully
+        data:
+          $ref: '#/components/schemas/Loan'
+
+    LoanListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Loans retrieved successfully
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Loan'
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: An error occurred
+        errors:
+          type: array
+          items:
+            type: string
+          example: ["Invalid email format", "Amount must be greater than 0"]

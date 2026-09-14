@@ -1,0 +1,9 @@
+.git
+.env
+.env.*
+loan-server.exe
+server.*.log
+service.log
+bank-portal/node_modules
+bank-portal/.next
+**/.git

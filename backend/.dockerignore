@@ -1,0 +1,6 @@
+.env
+.env.*
+*.log
+*.exe
+LOAN
+.loan-gocache/
